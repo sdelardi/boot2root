@@ -1,0 +1,34 @@
+Pour notre premiere solution, nous avons utilise une machine sous ubuntu sur laquelle on se connecte en ssh
+(ssh root@163.172.190.120), c'est sur cette machine que l'on utilise les scripts necessaire a l'exploitation de l'iso.
+
+Resume de la solution:
+Nous copions dans un dossier les fichiers de l'iso, et dans l'autre le systeme. On modifie le fichier /etc/shadow du systeme pour enlever le mot de passe root, ensuite on remplace le systeme de l'iso par notre systeme modifie, puis on recree l'iso.
+
+1ere etapte: Copier les fichiers
+On cree un dossier iso et un dossier squashfs qui vont contenir respectivement une copie des fichiers de l'iso et une copie des fichiers du systeme.
+On monte l'iso avec la commande mount puis on copie les fichiers vers notre dossier iso
+Ensuite on monte le systeme iso/casper/filesystem.squashfs et on copie les fichiers vers notre dossier squashfs
+
+2eme etape: Modifier le password root
+Dans notre dossier squashfs qui contient le systeme, on edite le fichier /etc/shadow pour enlever le mot de passe root (voir demonstration en soutenance).
+
+3eme etape: Update le systeme puis le remplacer dans l'iso
+On utilise chroot pour se "connecter" en root dans le systeme present dans notre dossier squashfs:
+chroot squashfs
+Ensuite on utilise la commande suivante pour recreer le fichier initrd qui est charge au boot:
+update-initramfs -k all -u
+Puis on sort du mode chroot:
+exit
+Ensuite on supprime le systeme de l'iso (iso/casper/filesystem.squashfs)
+Puis on le remplace par le notre grace a la commande mksquashfs:
+mksquashfs . ../iso/casper/filesystem.squashfs -info
+On peut maintenant utiliser la commande genisoimage pour recreer l'iso:
+genisoimage -o new.iso -r -J -no-emul-boot -boot-load-size 4 -boot-info-table -b isolinux/isolinux.bin -c isolinux/boot.cat ./
+
+Etape 4: Download l'iso modifie sur notre machine a 42 et le lancer dans virtualbox
+On recupere l'iso qui est sur notre machine ubuntu:
+scp root@163.172.190.120:/root/livecd/iso/new.iso .
+
+Etape 5: Creer une machine virtuelle a partir de l'iso sur virtualbox
+
+Etape 6: Entrer "root" comme login, et faire un cat README pour voir le CONGRATULATIONS !
